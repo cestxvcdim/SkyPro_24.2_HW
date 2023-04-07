@@ -5,10 +5,8 @@ from typing import List
 
 @dataclass
 class Params:
-    cmd1: List[str]
-    cmd2: List[str]
-    value1: str
-    value2: str
+    cmd: List[str]
+    value: str
     filename: str
 
 

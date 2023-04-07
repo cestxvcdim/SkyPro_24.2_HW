@@ -1,24 +1,34 @@
 import re
-from typing import Union, List, Dict, TextIO
+from typing import Union, List, Dict, TextIO, Iterator, Generator
 from marshmallow.exceptions import ValidationError
 from d_classes import GreetingsSchema, Greetings
 
 
-def make_query_response(cmd: str, val: str, rof_obj: Union[str, List, TextIO]) -> Union[str, List]:
+def slice_limit(it: Union[str, List, TextIO], limit: int) -> Generator:
+    i = 0
+    for item in it:
+        if i < limit:
+            yield item
+        else:
+            break
+        i += 1
+
+
+def make_query_response(cmd: str, val: str, it: Union[str, List, TextIO]) -> Union[Iterator, Generator, str]:
     match cmd:
         case "filter":
-            return list(filter(lambda x: val in x, rof_obj))
+            return filter(lambda x: val in x, it)
         case "map":
-            return '\n'.join([x.split()[int(val)] for x in rof_obj])
+            return map(lambda v: v.split(" ")[int(val)], it)
         case "unique":
-            return list(set(rof_obj))
+            return iter(set(it))
         case "sort":
-            return sorted(rof_obj, reverse=val == 'desc')
+            return iter(sorted(it, reverse=val == 'desc'))
         case "limit":
-            return list(rof_obj)[:int(val)]
+            return slice_limit(it, int(val))
         case "regex":
             regexp: re.Pattern = re.compile(val)
-            return list(filter(lambda v: regexp.findall(v), rof_obj))
+            return filter(lambda v: regexp.findall(v), it)
         case _:
             return ""
 
