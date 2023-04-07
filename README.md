@@ -1,9 +1,10 @@
 # SkyPro
 
-## 23.2 Homework
+## 24.2 Homework
 
 ***
 About project
 ***
 
-* Functional programming
+* Regular expressions
+* Typing

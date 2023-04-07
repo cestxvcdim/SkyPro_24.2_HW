@@ -1,6 +1,9 @@
 import os
-from flask import Flask, jsonify, request, abort
-from utils import make_query_response
+from flask import Flask, jsonify, request, abort, Response
+from typing import Union, Optional, List, Any
+from dataclasses import asdict
+from utils import make_query_response, get_greetings, Greetings
+from greet import greetings as g
 
 app = Flask(__name__)
 
@@ -9,40 +12,34 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 
 
 @app.route('/')
-def main_page():
-    greetings = {
-        "message": "Hello! Input in browse string '/perform_query' and make you query",
-        "params": {
-            "cmd1": ["filter", "map", "unique", "sort", "limit"],
-            "cmd2": ["filter", "map", "unique", "sort", "limit"],
-            "value1": "Any",
-            "value2": "Any",
-            "filename": "<filename>.txt"
-        }
-    }
-    return jsonify(greetings)
+def main_page() -> Response:
+    greetings: Greetings = get_greetings(g)
+    return jsonify(asdict(greetings))
 
 
 @app.route('/perform_query', methods=["POST"])
-def query():
-    data = request.json
-    cmd1 = data.get("cmd1")
-    cmd2 = data.get("cmd2")
-    value1 = data.get("value1")
-    value2 = data.get("value2")
-    filename = data.get("filename")
+def query() -> Response:
+    data: Optional[Any] = request.json
+    if not data:
+        return jsonify({"message": "Data is empty"})
+    cmd1: Optional[str] = data.get("cmd1")
+    cmd2: Optional[str] = data.get("cmd2")
+    value1: Optional[str] = data.get("value1")
+    value2: Optional[str] = data.get("value2")
+    filename: Optional[str] = data.get("filename")
 
     if not (cmd1 and value1 and filename):
-        abort(400, 'You need input the minimum amount of commands (cmd1, value1, filename)!')
+        abort(400, 'You need input the minimum amount of commands (cmd1, value1, filename)')
 
-    file_path = os.path.join(DATA_DIR, filename)
+    file_path: str = os.path.join(DATA_DIR, filename)
     if not os.path.exists(file_path):
-        return abort(400, 'File not found')
+        abort(400, 'File not found')
 
     with open(file_path) as file:
-        result = make_query_response(cmd1, value1, file)
+        result: Union[str, List] = make_query_response(cmd1, value1, file)
         if cmd2 and value2:
-            result = make_query_response(cmd2, value2, result)
+            result2: Union[str, List] = make_query_response(cmd2, value2, result)
+            return jsonify(result2)
         return jsonify(result)
 
 
